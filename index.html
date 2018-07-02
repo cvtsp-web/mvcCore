@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+	</head>
+	<body>
+		<div id="app"></div>
+		<script type="text/javascript" src="core/core.js"></script>
+		<script type="text/javascript">
+			var App = (function(_FristVersion) {
+				_FristVersion.inherits(App, _FristVersion);
+				function App() {
+					var _this = _FristVersion.possibleConstructorReturn(this, _FristVersion.call(this));
+					
+					_this.data = {
+						age: 18,
+						name: 'wu'
+					};
+					
+				}
+				
+				App.prototype.render = function() {
+					return `
+						<div>
+							<h2>{{age}}</h2>
+							<div>{{name}}</div>
+							<ElButton></ElButton>
+						</div>
+					`
+				}
+				
+				return App;
+			})(FristVersion);
+			FristVersion.registerComponent('App', App);
+			
+			FristVersion.render('<App />', document.getElementById('app'));
+		</script>
+	</body>
+</html>
