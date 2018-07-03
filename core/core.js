@@ -103,7 +103,7 @@
 		: function(val) { return obj[val]}
 	}
 
-	var isHtmlTag = makeMap('div,html,body,h1,h2,b,a,header', true);
+	var isHtmlTag = makeMap('div,html,body,h1,h2,b,a,header,button', true);
 
 	// 1. 核心类
 	function Cvtsp() {
@@ -138,6 +138,8 @@
 				},
 				set: function(newVal) {
 					if(value === newVal) return;
+					// 当前值覆盖旧值
+					value = newVal;
 					// 数据发生变化了
 					_binding.watcher.forEach(function(watch) {
 						watch.update(); // dom内容实时更新
@@ -158,6 +160,14 @@
 			var attrs = getAttributes(child);
 			
 			// 2. 区分标准html元素 还是组件元素
+			parserHtmlNode(child, attrs);
+
+			// 我们只要text节点
+			parserTextNode(child);
+			
+		});
+
+		function parserHtmlNode(child, attrs) {
 			if(isHtmlTag(child.tagName)) {
 				// 3. 区分key是否为事件还是属性
 				Object.keys(attrs).forEach(function(attr) {
@@ -167,19 +177,19 @@
 						child.addEventListener(attr.replace(isEventRegexp, ''), function(event) {
 							var event = event || window.event;
 							var eventName = attrs[attr];
-
-							_this[eventName].call(_this, event); 
+							
+							_this[eventName] && _this[eventName].call(_this, event); 
 						}, false);
 					}
-
-					// 是否为动态属性的
 				})
+			}else {
+				parserComponentNode(child);
 			}
+		}
 
-			// 我们只要text节点
-			parserTextNode(child);
-			
-		});
+		function parserComponentNode(child) {
+			render(child, child);
+		}
 
 		function parserTextNode(child) {
 			var childNodes = child.childNodes;
@@ -190,18 +200,17 @@
 
 					if(placeholders && placeholders.length) {
 						placeholders.forEach(function(p) {
-							// 1. 获取花括号中的表达式
+							// 1. 获取花括号中的所有表达式
 							var exp = p.match(getTextInRegexp)[1];
 							
-							// 2. 
+							// 2. 获取表达式中每个key值
 							var everyKeyLists = exp.match(zimuRegexp);
-							
 							everyKeyLists.forEach(function(key) {
 								//el, context, attr, exp
 								_this._binding[key].watcher.push(new Watcher(
 									child,
 									_this,
-									'textContent',  //value
+									'textContent',  
 									exp
 								));
 							})
@@ -218,12 +227,13 @@
 	 * 渲染节点
 	 * @param {String|Element} nodeName 
 	 * @param {Element} el 
+	 * @return {Component}
 	 */
 	function render(nodeName, el) {
 		// 1. 获取nodeName名字
-		var name = nodeName.match(componentRegexp); // app
-		var nodeName = typeof nodeName === 'string' ? name[1] : nodeName.tagName;
-		var Component = Cvtsp._components[nodeName.toLowerCase()];
+		var name = typeof nodeName === 'string' ? nodeName.match(componentRegexp)[1] : nodeName.tagName; // app
+		var Component = Cvtsp._components[name.toLowerCase()];
+		el.props = Component.defaultProps || {};
 
 		return Component && new Component(el);
 	}

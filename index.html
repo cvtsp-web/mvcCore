@@ -10,6 +10,32 @@
 	<div id="app"></div>
 	<script src="./core/core.js"></script>
 	<script>
+		var ElButton = (function(_Cvtsp) {
+			Cvtsp.inherits(ElButton, _Cvtsp);
+			ElButton.defaultProps = {
+				title: 'hello world',
+				height: 200
+			}
+			function ElButton(el) {
+				var _this = Cvtsp.possibleConstructorReturn(this, _Cvtsp.call(this));
+				_this.parent = el;
+				_this.init();
+			}
+
+			ElButton.prototype.template = function() {
+				return `
+					<button @click="handlerClick">我是按钮快点我</button>
+				`
+			}
+
+			ElButton.prototype.handlerClick = function() {
+				console.log('好舒服!')
+			}
+
+			return ElButton;
+		})(Cvtsp);
+		Cvtsp.registerComponent('ElButton', ElButton);
+
 		// 入口组件
 		var App = (function(_Cvtsp) {
 			Cvtsp.inherits(App, _Cvtsp);
@@ -29,8 +55,9 @@
 			App.prototype.template = function() {
 				return `
 					<div :class="aa" @click="haha">{{name}}</div>
-					<h2 @mouseenter="handlerCLick">s{{name}}1212<a>1212</a></h2>
+					<h2>{{height}}<a>1212</a></h2>
 					<div>{{height}}</div>
+					<ElButton title="name"></ElButton>
 				`
 			}
 
