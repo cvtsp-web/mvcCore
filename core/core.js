@@ -81,8 +81,9 @@
 		}.bind(this))
 
 		var func = Function.apply(this, keys.concat('return ' + this.exp));
+		var result = func.apply(this, values);
 
-		this.el[this.attr] = func.apply(this, values);
+		this.el[this.attr] = result;
 	}
 
 	/**
@@ -115,11 +116,23 @@
 	}
 
 	Cvtsp.prototype.init = function() {
-		// 1. 数据双向绑定
-		this.observer(this.data);
+		var timer = setTimeout(_ => {
+			clearTimeout(timer);
+			timer = null;
+			Object.getOwnPropertyNames(this).forEach(function(key) {
+				if(this.parent.props[key]) {
+					this.parent.props[key] = this[key];
+				}
+			}.bind(this))
+	
+			Object.assign(this.data, this.parent.props);
+			
+			// 1. 数据双向绑定
+			this.observer(this.data);
 
-		// 2. 模版解析
-		this.parserHTML();
+			// 2. 模版解析
+			this.parserHTML();
+		})
 	}
 
 	Cvtsp.prototype.observer = function(data) {
@@ -183,12 +196,28 @@
 					}
 				})
 			}else {
-				parserComponentNode(child);
+				parserComponentNode(child, attrs);
 			}
 		}
 
-		function parserComponentNode(child) {
-			render(child, child);
+		function parserComponentNode(child, attrs) {
+			var component = render(child, child);
+
+			Object.keys(attrs).forEach(function(attr) {
+				var exp = attrs[attr];
+				// 动态属性
+				if(isPropertyRegexp.test(attr)) {
+					var everyKeyLists = exp.match(zimuRegexp);
+					everyKeyLists.forEach(function(key) {
+						_this._binding[key].watcher.push(new Watcher(
+							component,
+							_this,
+							attr.replace(isPropertyRegexp, ''),
+							exp
+						))
+					})
+				}
+			})
 		}
 
 		function parserTextNode(child) {

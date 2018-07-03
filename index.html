@@ -24,7 +24,7 @@
 
 			ElButton.prototype.template = function() {
 				return `
-					<button @click="handlerClick">我是按钮快点我</button>
+					<button @click="handlerClick">{{title}}</button>
 				`
 			}
 
@@ -48,16 +48,14 @@
 					age: 18,
 					height: 180
 				}
-
+				
 				this.init();
 			}
 
 			App.prototype.template = function() {
 				return `
 					<div :class="aa" @click="haha">{{name}}</div>
-					<h2>{{height}}<a>1212</a></h2>
-					<div>{{height}}</div>
-					<ElButton title="name"></ElButton>
+					<ElButton :title="height"></ElButton>
 				`
 			}
 
