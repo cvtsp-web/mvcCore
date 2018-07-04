@@ -3,7 +3,8 @@
 	? module.exports = factory()
 	: typeof define === 'function' && define.amd ? define(factory) : global.Cvtsp = factory();
 })(this, function() {
-
+	var toString = Object.prototype.toString;
+	var slice = Array.prototype.slice;
 	var create = Object.create || function(superClass) {
 		function O() {};
 		O.prototype = superClass.prototype;
@@ -57,6 +58,46 @@
 	var zimuRegexp = /\s*([\w]+)\s*/g;
 
 	/**
+	 * 公共类
+	 */
+	var Publics = (function() {
+		function Publics() {
+			this.events = {};
+			this.context = this;
+		}
+
+		/**
+		 * 订阅相关的事件
+		 * @param {String} name: 触发的事件名称 
+		 * @param {Function} func: 事件的声明 
+		 */
+		Publics.prototype.on = function(name, func, context) {
+			this.context = context;
+			if(!this.events[name]) {
+				this.events[name] = [];
+			}
+
+			this.events[name].push(func);
+		}
+
+		/**
+		 * 发布相关事件(触发)
+		 * @param {String} name 
+		 * @param {Arguments} args: 多个参数
+		 */
+		Publics.prototype.emit = function(name) {
+			var funcLists = this.events[name];
+			var args = slice.call(arguments, 1);
+
+			for(var i = 0, func; func = funcLists[i++];) {
+				func.apply(this.context, args);
+			}
+		}
+
+		return Publics;
+	})();
+
+	/**
 	 * 2. 监听类
 	 * 元素的属性赋值,  Component属性赋值
 	 * @param {Element| Component} el
@@ -75,9 +116,9 @@
 	}
 
 	Watcher.prototype.update = function() {
-		var keys = Object.keys(this.context.data);
+		var keys = Object.getOwnPropertyNames(this.context);
 		var values = keys.map(function(key) {
-			return this.context.data[key];
+			return this.context[key];
 		}.bind(this))
 
 		var func = Function.apply(this, keys.concat('return ' + this.exp));
@@ -104,10 +145,12 @@
 		: function(val) { return obj[val]}
 	}
 
-	var isHtmlTag = makeMap('div,html,body,h1,h2,b,a,header,button', true);
+	var isHtmlTag = makeMap('div,html,body,h1,h2,b,a,header,button,dialog', true);
 
 	// 1. 核心类
+	inherits(Cvtsp, Publics);
 	function Cvtsp() {
+		possibleConstructorReturn(this, Publics.call(this));
 		this.parent = null;
 		this.children = [];
 		this.data = {};
@@ -116,50 +159,43 @@
 	}
 
 	Cvtsp.prototype.init = function() {
-		var timer = setTimeout(_ => {
-			clearTimeout(timer);
-			timer = null;
-			Object.getOwnPropertyNames(this).forEach(function(key) {
-				if(this.parent.props[key]) {
-					this.parent.props[key] = this[key];
-				}
-			}.bind(this))
-	
-			Object.assign(this.data, this.parent.props);
-			
 			// 1. 数据双向绑定
-			this.observer(this.data);
-
+			// 将data和props融合 二者的key不能相同(这里目前没有做处理)
+			this.observer();
+			
 			// 2. 模版解析
 			this.parserHTML();
-		})
 	}
 
-	Cvtsp.prototype.observer = function(data) {
-		Object.keys(data).forEach(function(key) {
-			var value = data[key];
-
-			// important init
+	Cvtsp.prototype.observer = function() {
+		Object.assign(this.data, this.parent.props);
+		Object.keys(this.data).forEach(function(key) {
+			var value;
+			
+			if(this[key]){
+				value = this[key];
+			}else {
+				value = this.data[key];
+			}
 			this._binding[key] = {
-				watcher: []    //[Watcher, Watcher, Watcher, ...] 放所有操作了当前属性{key}的关联 dom操作,属性赋值
+				watcher: []    
 			};
-			var _binding = this._binding[key];
-			Object.defineProperty(data, key, {
+
+			var binding = this._binding[key];
+			Object.defineProperty(this, key, {
 				configurable: true,
 				get: function() {
 					return value;
 				},
 				set: function(newVal) {
 					if(value === newVal) return;
-					// 当前值覆盖旧值
 					value = newVal;
-					// 数据发生变化了
-					_binding.watcher.forEach(function(watch) {
-						watch.update(); // dom内容实时更新
+					binding.watcher.forEach(function(watch) {
+						watch.update();
 					})
 				}
 			})
-		}.bind(this))
+		}.bind(this));
 	}
 
 	Cvtsp.prototype.parserHTML = function() {
@@ -205,7 +241,7 @@
 
 			Object.keys(attrs).forEach(function(attr) {
 				var exp = attrs[attr];
-				// 动态属性
+				// 匹配动态属性
 				if(isPropertyRegexp.test(attr)) {
 					var everyKeyLists = exp.match(zimuRegexp);
 					everyKeyLists.forEach(function(key) {
@@ -217,6 +253,13 @@
 						))
 					})
 				}
+
+				// 匹配事件
+				if(isEventRegexp.test(attr)) {
+					var eventName = attrs[attr];
+					component.on(attr.replace(isEventRegexp, ''), _this[eventName], _this);
+				}
+
 			})
 		}
 

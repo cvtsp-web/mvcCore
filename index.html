@@ -19,6 +19,9 @@
 			function ElButton(el) {
 				var _this = Cvtsp.possibleConstructorReturn(this, _Cvtsp.call(this));
 				_this.parent = el;
+				_this.data = {
+					plateCode: '皖A3301'
+				}
 				_this.init();
 			}
 
@@ -29,7 +32,7 @@
 			}
 
 			ElButton.prototype.handlerClick = function() {
-				console.log('好舒服!')
+				this.emit('node-click');
 			}
 
 			return ElButton;
@@ -55,19 +58,18 @@
 			App.prototype.template = function() {
 				return `
 					<div :class="aa" @click="haha">{{name}}</div>
-					<ElButton :title="height"></ElButton>
+					<ElButton :title="height" @node-click="aa"></ElButton>
 				`
 			}
 
 			App.prototype.haha = function(event) {
-				this.data.height = (this.data.height  + 1);
+				this.height = (this.height  + 1);
+				console.log('来对了')
 			}
 
-			App.prototype.handlerCLick = function() {
-				
+			App.prototype.aa = function() {
+				this.haha();
 			}
-
-
 			return App;
 		})(Cvtsp);
 		Cvtsp.registerComponent('App', App);
