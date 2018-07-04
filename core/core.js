@@ -50,13 +50,6 @@
 		return obj;
 	}
 
-	var componentRegexp = /\s*<([^\s]+)/;
-	var isEventRegexp = /\s*@/;
-	var isPropertyRegexp = /\s*:/;
-	var isExistRegexp = /[^{}]*({{([^{}]+)}})[^{}]*/g;
-	var getTextInRegexp = /[^{}]*{{([^{}]+)}}/;
-	var zimuRegexp = /\s*([\w]+)\s*/g;
-
 	/**
 	 * 公共类
 	 */
@@ -146,6 +139,13 @@
 	}
 
 	var isHtmlTag = makeMap('div,html,body,h1,h2,b,a,header,button,dialog', true);
+	var componentRegexp = /\s*<([^\s]+)/;
+	var isEventRegexp = /\s*@/;
+	var isPropertyRegexp = /\s*:/;
+	var isExistRegexp = /[^{}]*({{([^{}]+)}})[^{}]*/g;
+	var getTextInRegexp = /[^{}]*{{([^{}]+)}}/;
+	var zimuRegexp = /\s*([\w]+)\s*/g;
+	var slotRegexp = /\s*(<slot([^{}]*)><\/slot>)/;
 
 	// 1. 核心类
 	inherits(Cvtsp, Publics);
@@ -168,6 +168,7 @@
 	}
 
 	Cvtsp.prototype.observer = function() {
+		var _this = this;
 		Object.assign(this.data, this.parent.props);
 		Object.keys(this.data).forEach(function(key) {
 			var value;
@@ -189,6 +190,9 @@
 				},
 				set: function(newVal) {
 					if(value === newVal) return;
+					// 监听的回调函数执行
+					_this.watch && _this.watch[key].call(_this, newVal, value);
+
 					value = newVal;
 					binding.watcher.forEach(function(watch) {
 						watch.update();
@@ -200,7 +204,8 @@
 
 	Cvtsp.prototype.parserHTML = function() {
 		var _this = this;
-		var template = this.template();
+		var template = this.template().replace(slotRegexp, this.parent.childrens);
+		console.log(template)
 		this.parent.innerHTML = template;
 
 		// 获取每个dom ==> 获取dom上的属性
@@ -237,6 +242,7 @@
 		}
 
 		function parserComponentNode(child, attrs) {
+			child.childrens = child.innerHTML;
 			var component = render(child, child);
 
 			Object.keys(attrs).forEach(function(attr) {
@@ -259,7 +265,6 @@
 					var eventName = attrs[attr];
 					component.on(attr.replace(isEventRegexp, ''), _this[eventName], _this);
 				}
-
 			})
 		}
 
@@ -305,9 +310,14 @@
 		// 1. 获取nodeName名字
 		var name = typeof nodeName === 'string' ? nodeName.match(componentRegexp)[1] : nodeName.tagName; // app
 		var Component = Cvtsp._components[name.toLowerCase()];
-		el.props = Component.defaultProps || {};
 
-		return Component && new Component(el);
+		if(!Component) return;
+		// 给挂在节点添加props
+		el.props = Component.defaultProps || {};
+		// 给挂在节点添加子内容 innerHTMl
+		//el.childrens
+
+		return new Component(el);
 	}
 
 	/**

@@ -22,12 +22,23 @@
 				_this.data = {
 					plateCode: '皖A3301'
 				}
+				
+
+				// 监听数据
+				_this.watch = {
+					title: function(newVal, oldVal) {
+						
+					}
+				}
+
 				_this.init();
 			}
 
 			ElButton.prototype.template = function() {
 				return `
-					<button @click="handlerClick">{{title}}</button>
+					<button @click="handlerClick">
+						<slot></slot>
+					</button>
 				`
 			}
 
@@ -58,13 +69,14 @@
 			App.prototype.template = function() {
 				return `
 					<div :class="aa" @click="haha">{{name}}</div>
-					<ElButton :title="height" @node-click="aa"></ElButton>
+					<ElButton :title="height" @node-click="aa">
+						老师好
+					</ElButton>
 				`
 			}
 
 			App.prototype.haha = function(event) {
 				this.height = (this.height  + 1);
-				console.log('来对了')
 			}
 
 			App.prototype.aa = function() {
