@@ -10,28 +10,18 @@
 	<div id="app"></div>
 	<script src="./core/core.js"></script>
 	<script>
+		// **本次要解决slot 和 Component动态组件
 		var ElButton = (function(_Cvtsp) {
 			Cvtsp.inherits(ElButton, _Cvtsp);
 			ElButton.defaultProps = {
 				title: 'hello world',
 				height: 200
 			}
-			function ElButton(el) {
-				var _this = Cvtsp.possibleConstructorReturn(this, _Cvtsp.call(this));
-				_this.parent = el;
+			function ElButton() {
+				var _this = Cvtsp.possibleConstructorReturn(this, _Cvtsp.apply(this, arguments));
 				_this.data = {
 					plateCode: '皖A3301'
 				}
-				
-
-				// 监听数据
-				_this.watch = {
-					title: function(newVal, oldVal) {
-						
-					}
-				}
-
-				_this.init();
 			}
 
 			ElButton.prototype.template = function() {
@@ -53,30 +43,27 @@
 		// 入口组件
 		var App = (function(_Cvtsp) {
 			Cvtsp.inherits(App, _Cvtsp);
-			function App(el) {
-				var _this = Cvtsp.possibleConstructorReturn(this, _Cvtsp.call(this));
-				this.parent = el;
-
+			function App() {
+				var _this = Cvtsp.possibleConstructorReturn(this, _Cvtsp.apply(this, arguments));
 				this.data = {
 					name: 'wukangjun',
 					age: 18,
-					height: 180
+					height: 180,
+					lists: [1, 2, 3],
+					name1: 'ElButton'
 				}
-				
-				this.init();
 			}
 
 			App.prototype.template = function() {
 				return `
-					<div :class="aa" @click="haha">{{name}}</div>
-					<ElButton :title="height" @node-click="aa">
-						老师好
-					</ElButton>
+					<div @click="haha">{{name}}</div>
+					<Component :is="name1">hello</Component>
+					<ElButton :title="height" @node-click="aa">搜索</ElButton>
 				`
 			}
 
 			App.prototype.haha = function(event) {
-				this.height = (this.height  + 1);
+				this.name1 = '';
 			}
 
 			App.prototype.aa = function() {
@@ -87,7 +74,7 @@
 		Cvtsp.registerComponent('App', App);
 
 		// 一切从这开始 1. 
-		Cvtsp.render('<App />', document.getElementById('app'));
+		Cvtsp.render('App', document.getElementById('app'));
 	</script>
 </body>
 </html>

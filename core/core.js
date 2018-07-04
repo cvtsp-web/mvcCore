@@ -145,13 +145,13 @@
 	var isExistRegexp = /[^{}]*({{([^{}]+)}})[^{}]*/g;
 	var getTextInRegexp = /[^{}]*{{([^{}]+)}}/;
 	var zimuRegexp = /\s*([\w]+)\s*/g;
-	var slotRegexp = /\s*(<slot([^{}]*)><\/slot>)/;
+	var slotRegexp = /\s*(<slot([^{}]*)><\/slot>)/;        //目前只匹配单一的slot
 
 	// 1. 核心类
 	inherits(Cvtsp, Publics);
 	function Cvtsp() {
 		possibleConstructorReturn(this, Publics.call(this));
-		this.parent = null;
+		this.parent = arguments[0];
 		this.children = [];
 		this.data = {};
 		// 存储属性监听的队列
@@ -203,9 +203,9 @@
 	}
 
 	Cvtsp.prototype.parserHTML = function() {
+		if(!this.template) return;
 		var _this = this;
 		var template = this.template().replace(slotRegexp, this.parent.childrens);
-		console.log(template)
 		this.parent.innerHTML = template;
 
 		// 获取每个dom ==> 获取dom上的属性
@@ -299,6 +299,31 @@
 		}
 	}	
 
+	/**
+	 * 动态组件
+	 */
+	var Component = (function(_Cvtsp) {
+		inherits(Component, _Cvtsp);
+
+		Component.defaultProps = {
+			is: ''
+		};
+		function Component() {
+			var _this = possibleConstructorReturn(this, _Cvtsp.apply(this, arguments));
+			_this.watch = {
+				is: function(newVal) {
+					if(newVal !== '') {
+						render(newVal, _this.parent);
+					}else {
+						this.parent.innerHTML = '';
+					}
+				}
+			};
+		};
+
+		return Component;
+	})(Cvtsp);
+	registerComponent('Component', Component);
 
 	/**
 	 * 渲染节点
@@ -308,16 +333,18 @@
 	 */
 	function render(nodeName, el) {
 		// 1. 获取nodeName名字
-		var name = typeof nodeName === 'string' ? nodeName.match(componentRegexp)[1] : nodeName.tagName; // app
-		var Component = Cvtsp._components[name.toLowerCase()];
+		var name = typeof nodeName === 'string' ? nodeName : nodeName.tagName; // app
+		var LibraryComponent = Cvtsp._components[name.toLowerCase()];
 
-		if(!Component) return;
+		if(!LibraryComponent) return;
 		// 给挂在节点添加props
-		el.props = Component.defaultProps || {};
+		el.props = LibraryComponent.defaultProps || {};
 		// 给挂在节点添加子内容 innerHTMl
 		//el.childrens
+		var libraryC = new LibraryComponent(el);
+		libraryC.init();      // 每个组件初始化入口
 
-		return new Component(el);
+		return libraryC;
 	}
 
 	/**
