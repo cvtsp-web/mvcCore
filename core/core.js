@@ -359,6 +359,26 @@
 		Cvtsp._components[name.toLowerCase()] = component;
 	}
 
+	/**
+	 * 引入外部插件
+	 * @param {*} plugins 
+	 */
+	function use(plugins) {
+		var installedPlugins = (this._installedPlugins || (this._installedPlugins = []));
+		if(installedPlugins.indexOf(plugins) > -1) {
+			return this;
+		}
+
+		var args = slice.call(arguments, 1);   // options
+		args.unshift(this);
+		if(typeof plugins === 'function') {
+			plugins.apply(null, args);
+		}
+
+		installedPlugins.push(plugins);
+	}
+
+	Cvtsp.use = use;
 	Cvtsp.render = render;
 	Cvtsp.inherits = inherits;
 	Cvtsp.registerComponent = registerComponent;
