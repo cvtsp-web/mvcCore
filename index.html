@@ -13,9 +13,42 @@
 		var Http = (function() {
 			function Http(Cvtsp, opts) {
 				this.xhr = 'hello';
-				Cvtsp.prototype.http = Cvtsp.http = function() {
-					console.log('what')
+				
+			};
+			Http.prototype.request = request;
+			/**
+			 * @param {Object} options: 
+			 * {
+			 * 	url:'', 
+			 * 	method: 'get|post',
+			 * 	headers:{}, 
+			 * 	params: {}, 
+			 * 	data: JSON.stringify({}), 
+			 * 	async:false
+			 * }
+			 */ 
+			function request(options) {
+				var xhr = new XMLHttpRequest();
+
+				xhr.onreadystatechange = function() {
+					
 				}
+
+				xhr.open(
+					options.method || Http.defaults.method,
+					options.url,
+					options.async || Http.defaults.async
+				);
+			}
+
+			function parser(obj) {
+				if(typeof obj !== 'object') return;
+			}
+			Http.defaults = {
+				headers: {},
+				method: 'get',
+				withCredentials: false,
+				async: true   // 默认异步
 			};
 			return Http;
 		})();
@@ -82,7 +115,7 @@
 			}
 			return App;
 		})(Cvtsp);
-		Cvtsp.registerComponent('App', App);
+		Cvtsp.registerComponent('App', App); 
 
 		// 一切从这开始 1. 
 		Cvtsp.use(Http);
